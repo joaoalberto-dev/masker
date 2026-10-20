@@ -304,14 +304,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         toggleButton.toolTip = "Toggle sidebar"
         toggleButton.setAccessibilityLabel("Toggle sidebar")
 
-        let accessory = NSTitlebarAccessoryViewController()
-        accessory.layoutAttribute = .left
-        accessory.view = toggleButton
+        // AppKit owns the accessory's frame; constrain only its content.
+        let accessoryView = NSView(frame: NSRect(x: 0, y: 0, width: 32, height: 32))
         toggleButton.translatesAutoresizingMaskIntoConstraints = false
+        accessoryView.addSubview(toggleButton)
         NSLayoutConstraint.activate([
+            toggleButton.centerXAnchor.constraint(equalTo: accessoryView.centerXAnchor),
+            toggleButton.centerYAnchor.constraint(equalTo: accessoryView.centerYAnchor),
             toggleButton.widthAnchor.constraint(equalToConstant: 24),
             toggleButton.heightAnchor.constraint(equalToConstant: 24)
         ])
+        let accessory = NSTitlebarAccessoryViewController()
+        accessory.layoutAttribute = .left
+        accessory.view = accessoryView
         window.addTitlebarAccessoryViewController(accessory)
 
         window.center()
