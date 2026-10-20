@@ -250,8 +250,10 @@ final class PreviewView: NSView {
         super.init(frame: frameRect)
         wantsLayer = true
         layer = previewLayer
-        previewLayer.backgroundColor = NSColor.black.cgColor
+        previewLayer.backgroundColor = NSColor.clear.cgColor
         previewLayer.videoGravity = .resizeAspectFill
+        previewLayer.cornerRadius = 14
+        previewLayer.masksToBounds = true
     }
 
     required init?(coder: NSCoder) {

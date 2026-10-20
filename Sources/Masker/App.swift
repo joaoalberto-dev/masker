@@ -132,8 +132,8 @@ private struct CameraDetail: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .aspectRatio(16 / 9, contentMode: .fit)
-            .background(Color(red: 0.055, green: 0.07, blue: 0.075))
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
             HStack(spacing: 8) {
                 Circle().fill(message == nil ? Color.green : Color.orange).frame(width: 7, height: 7)
