@@ -10,11 +10,15 @@ struct ContentView: View {
             if model.columnVisibility != .detailOnly {
                 sidebar
                     .frame(width: 250)
-                Divider()
+                    .padding(.leading, 12)
+                    .padding(.vertical, 12)
+                    .padding(.trailing, 14)
             }
             detail
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.trailing, 12)
         }
+        .background(Color(nsColor: .windowBackgroundColor))
         .frame(minWidth: 760, minHeight: 500)
         .animation(.easeInOut(duration: 0.18), value: model.columnVisibility)
         .onChange(of: model.selection) { model.select($0) }
@@ -65,8 +69,14 @@ struct ContentView: View {
                 }
             }
             .listStyle(.sidebar)
+            .scrollContentBackground(.hidden)
         }
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.08), radius: 14, x: 0, y: 5)
     }
 
     private func deviceRow(_ device: AVCaptureDevice, icon: String, selection: DeviceSelection) -> some View {
