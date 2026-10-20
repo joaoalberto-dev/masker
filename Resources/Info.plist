@@ -20,5 +20,7 @@
     <true/>
     <key>NSCameraUsageDescription</key>
     <string>Masker needs camera access to apply real-time video filters.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Masker needs microphone access to preview the selected audio input level.</string>
 </dict>
 </plist>
