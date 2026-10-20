@@ -41,4 +41,14 @@ The XCTest suite is managed by Swift Package Manager and covers logic shared
 with the app. Run it with `swift test` or `make test`.
 
 The interface uses SwiftUI hosted in an AppKit window, with AVFoundation for
-device discovery and previews. Filters and virtual devices are not implemented yet.
+device discovery and previews. The camera brightness control is applied to frames
+published by the Masker Camera Core Media I/O extension.
+
+## Publish the virtual camera
+
+In Xcode, select a development team for both the Masker app and CameraExtension
+targets. The team must be authorized for System Extensions and the
+`group.com.masker.app` app group. Build the signed app and move it to
+`/Applications`; macOS only allows system extensions to activate from an app in
+an Applications directory. Click **Publish** and approve the extension in System
+Settings → Privacy & Security. Other apps can then select **Masker Camera**.

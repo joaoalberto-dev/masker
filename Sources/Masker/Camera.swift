@@ -1,6 +1,10 @@
 import AppKit
 @preconcurrency import AVFoundation
 import AudioToolbox
+import CoreImage
+import ImageIO
+import Security
+@preconcurrency import SystemExtensions
 import SwiftUI
 
 enum DeviceSelection: Hashable {
@@ -30,6 +34,9 @@ final class DeviceBrowserModel: ObservableObject {
     @Published private(set) var cameraMessage: String?
     @Published private(set) var microphoneMessage: String?
     @Published private(set) var microphoneLevel: CGFloat = 0
+    @Published var cameraBrightness = 0.0
+    @Published private(set) var isCameraPublished = false
+    @Published private(set) var publishMessage: String?
 
     let camera = CameraCapture()
     private let microphone = MicrophoneCapture()
@@ -72,13 +79,17 @@ final class DeviceBrowserModel: ObservableObject {
 
     func stop() {
         camera.stop()
+        camera.endPublishing()
         microphone.stop()
     }
 
     func select(_ selection: DeviceSelection?) {
         self.selection = selection
+        if isCameraPublished { stopPublishingCamera() }
         camera.stop()
+        camera.endPublishing()
         microphone.stop()
+        isCameraPublished = false
         cameraMessage = nil
         microphoneMessage = nil
         microphoneLevel = 0
@@ -95,12 +106,55 @@ final class DeviceBrowserModel: ObservableObject {
             }
         }
     }
+
+    func publishCamera() {
+        publishMessage = nil
+        camera.setBrightness(cameraBrightness)
+        camera.beginPublishing()
+        let request = OSSystemExtensionRequest.activationRequest(
+            forExtensionWithIdentifier: "com.masker.app.CameraExtension",
+            queue: .main
+        )
+        CameraExtensionActivation.shared.activate(request, onApprovalRequired: { [weak self] in
+            self?.publishMessage = "Approve Masker Camera in System Settings → Privacy & Security to finish publishing."
+        }) { [weak self] message in
+            self?.publishMessage = message
+            self?.isCameraPublished = message == nil
+            if message != nil { self?.camera.endPublishing() }
+        }
+    }
+
+    func stopPublishingCamera() {
+        camera.endPublishing()
+        isCameraPublished = false
+        let request = OSSystemExtensionRequest.deactivationRequest(
+            forExtensionWithIdentifier: "com.masker.app.CameraExtension",
+            queue: .main
+        )
+        CameraExtensionActivation.shared.deactivate(request) { [weak self] message in
+            self?.publishMessage = message
+        }
+    }
 }
 
-final class CameraCapture: @unchecked Sendable {
+final class CameraCapture: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, @unchecked Sendable {
     let session = AVCaptureSession()
     private let queue = DispatchQueue(label: "com.masker.camera")
+    private let sampleQueue = DispatchQueue(label: "com.masker.camera.frames", qos: .userInteractive)
+    private let videoOutput = AVCaptureVideoDataOutput()
+    private let imageContext = CIContext()
+    private let brightnessLock = NSLock()
+    private var brightness: CGFloat = 0
+    private var shouldPublish = false
+    private var publishGeneration: UInt64 = 0
     private var activeDeviceID: String?
+
+    override init() {
+        super.init()
+        videoOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
+        videoOutput.alwaysDiscardsLateVideoFrames = true
+        videoOutput.setSampleBufferDelegate(self, queue: sampleQueue)
+    }
 
     func start(device: AVCaptureDevice) async -> String? {
         let authorized: Bool
@@ -130,6 +184,9 @@ final class CameraCapture: @unchecked Sendable {
                             return
                         }
                         session.addInput(input)
+                        if session.canAddOutput(videoOutput) {
+                            session.addOutput(videoOutput)
+                        }
                         activeDeviceID = device.uniqueID
                         session.commitConfiguration()
                     } catch {
@@ -149,6 +206,66 @@ final class CameraCapture: @unchecked Sendable {
             if session.isRunning { session.stopRunning() }
         }
     }
+
+    func setBrightness(_ value: Double) {
+        brightnessLock.lock()
+        brightness = CGFloat(value)
+        brightnessLock.unlock()
+    }
+
+    func beginPublishing() {
+        brightnessLock.lock()
+        shouldPublish = true
+        publishGeneration &+= 1
+        brightnessLock.unlock()
+    }
+
+    func endPublishing() {
+        brightnessLock.lock()
+        shouldPublish = false
+        publishGeneration &+= 1
+        brightnessLock.unlock()
+        if let url = CameraFrameStore.frameURL {
+            try? FileManager.default.removeItem(at: url)
+        }
+    }
+
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        brightnessLock.lock()
+        let amount = brightness
+        let publishing = shouldPublish
+        let generation = publishGeneration
+        brightnessLock.unlock()
+        guard publishing,
+              let url = CameraFrameStore.frameURL,
+              let filter = CIFilter(name: "CIColorControls") else { return }
+        filter.setValue(CIImage(cvPixelBuffer: pixelBuffer), forKey: kCIInputImageKey)
+        filter.setValue(amount, forKey: kCIInputBrightnessKey)
+        guard let outputImage = filter.outputImage,
+              let data = imageContext.jpegRepresentation(of: outputImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else { return }
+        brightnessLock.lock()
+        guard shouldPublish, publishGeneration == generation else {
+            brightnessLock.unlock()
+            return
+        }
+        do {
+            try data.write(to: url, options: .atomic)
+        } catch {
+            // A later frame will retry writing to the shared camera frame location.
+        }
+        brightnessLock.unlock()
+    }
+}
+
+enum CameraFrameStore {
+    static let frameURL: URL? = {
+        guard let task = SecTaskCreateFromSelf(kCFAllocatorDefault),
+              let groups = SecTaskCopyValueForEntitlement(task, "com.apple.security.application-groups" as CFString, nil) as? [String],
+              let group = groups.first,
+              let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: group) else { return nil }
+        return container.appendingPathComponent("published-camera.jpg")
+    }()
 }
 
 final class MicrophoneCapture: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate, @unchecked Sendable {

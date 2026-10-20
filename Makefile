@@ -1,21 +1,15 @@
 APP := build/Masker.app
-BINARY := $(APP)/Contents/MacOS/Masker
-SOURCES := $(wildcard Sources/Masker/*.swift)
-ARCH := $(shell uname -m)
+DERIVED_DATA := build/DerivedData
+PRODUCT := $(DERIVED_DATA)/Build/Products/Debug/Masker.app
 
 .PHONY: all build run test clean
 
 all: build
 
-build: $(BINARY) $(APP)/Contents/Info.plist
-
-$(BINARY): $(SOURCES)
-	mkdir -p $(APP)/Contents/MacOS build/module-cache
-	xcrun swiftc -parse-as-library -target $(ARCH)-apple-macosx13.0 -module-cache-path build/module-cache $(SOURCES) -o $@
-
-$(APP)/Contents/Info.plist: Resources/Info.plist
-	mkdir -p $(APP)/Contents
-	cp $< $@
+build:
+	xcodebuild build -project Masker.xcodeproj -scheme Masker -configuration Debug -destination 'platform=macOS' -derivedDataPath $(DERIVED_DATA)
+	rm -rf $(APP)
+	cp -R $(PRODUCT) $(APP)
 
 run: build
 	open $(APP)
