@@ -41,4 +41,6 @@ The XCTest suite is managed by Swift Package Manager and covers logic shared
 with the app. Run it with `swift test` or `make test`.
 
 The interface uses SwiftUI hosted in an AppKit window, with AVFoundation for
-device discovery and previews. Filters and virtual devices are not implemented yet.
+device discovery and previews. Camera previews include brightness, contrast, and
+white-balance controls; microphone previews include gain and voice-softening
+controls. Virtual devices are not implemented yet.
