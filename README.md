@@ -23,6 +23,9 @@ This builds and opens `build/Masker.app`: a single centered window with a fixed
 600 × 400 point content area and “Masker” centered horizontally and vertically.
 Closing the window quits the app.
 
+On first launch, macOS asks for camera access. You can change this permission in
+System Settings → Privacy & Security → Camera. Camera capture is not started yet.
+
 ```sh
 make build  # Build the app without opening it
 make clean  # Remove build output

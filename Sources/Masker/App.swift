@@ -1,4 +1,5 @@
 import AppKit
+import AVFoundation
 import SwiftUI
 
 struct ContentView: View {
@@ -25,6 +26,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.makeKeyAndOrderFront(nil)
         self.window = window
         NSApp.activate(ignoringOtherApps: true)
+
+        if AVCaptureDevice.authorizationStatus(for: .video) == .notDetermined {
+            AVCaptureDevice.requestAccess(for: .video) { _ in }
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

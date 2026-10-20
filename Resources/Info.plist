@@ -18,5 +18,7 @@
     <string>13.0</string>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSCameraUsageDescription</key>
+    <string>Masker needs camera access to apply real-time video filters.</string>
 </dict>
 </plist>
