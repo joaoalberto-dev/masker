@@ -33,8 +33,12 @@ Microphone. The app previews the selected device and does not save or transmit m
 
 ```sh
 make build  # Build the app without opening it
+make test   # Run the XCTest suite
 make clean  # Remove build output
 ```
+
+The XCTest suite is managed by Swift Package Manager and covers logic shared
+with the app. Run it with `swift test` or `make test`.
 
 The interface uses SwiftUI hosted in an AppKit window, with AVFoundation for
 device discovery and previews. Filters and virtual devices are not implemented yet.

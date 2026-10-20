@@ -8,6 +8,19 @@ enum DeviceSelection: Hashable {
     case microphone(String)
 }
 
+enum MicrophoneLevel {
+    static func peak(in samples: UnsafeBufferPointer<Float>) -> Float? {
+        guard !samples.isEmpty else { return nil }
+        return min(samples.reduce(Float.zero) { max($0, abs($1)) }, 1)
+    }
+
+    static func peak(in samples: UnsafeBufferPointer<Int16>) -> Float? {
+        guard !samples.isEmpty else { return nil }
+        let peak = samples.reduce(Int32.zero) { max($0, abs(Int32($1))) }
+        return min(Float(peak) / Float(Int16.max), 1)
+    }
+}
+
 @MainActor
 final class DeviceBrowserModel: ObservableObject {
     @Published private(set) var cameras: [AVCaptureDevice] = []
@@ -217,17 +230,17 @@ final class MicrophoneCapture: NSObject, AVCaptureAudioDataOutputSampleBufferDel
         let sampleCount = min(totalLength, lengthAtOffset) / bytesPerSample
         guard sampleCount > 0 else { return }
 
-        let peak: Float
+        let peak: Float?
         if stream.mFormatFlags & kAudioFormatFlagIsFloat != 0 && bytesPerSample == MemoryLayout<Float>.size {
             let samples = UnsafeRawPointer(dataPointer).assumingMemoryBound(to: Float.self)
-            peak = (0..<sampleCount).reduce(Float.zero) { max($0, abs(samples[$1])) }
+            peak = MicrophoneLevel.peak(in: UnsafeBufferPointer(start: samples, count: sampleCount))
         } else if stream.mFormatFlags & kAudioFormatFlagIsSignedInteger != 0 && bytesPerSample == MemoryLayout<Int16>.size {
             let samples = UnsafeRawPointer(dataPointer).assumingMemoryBound(to: Int16.self)
-            peak = (0..<sampleCount).reduce(Float.zero) { max($0, Float(abs(Int32(samples[$1]))) / Float(Int16.max)) }
+            peak = MicrophoneLevel.peak(in: UnsafeBufferPointer(start: samples, count: sampleCount))
         } else {
             return
         }
-        onLevel?(min(peak, 1))
+        if let peak { onLevel?(peak) }
     }
 }
 

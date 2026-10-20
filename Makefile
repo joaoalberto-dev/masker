@@ -3,7 +3,7 @@ BINARY := $(APP)/Contents/MacOS/Masker
 SOURCES := $(wildcard Sources/Masker/*.swift)
 ARCH := $(shell uname -m)
 
-.PHONY: all build run clean
+.PHONY: all build run test clean
 
 all: build
 
@@ -19,6 +19,9 @@ $(APP)/Contents/Info.plist: Resources/Info.plist
 
 run: build
 	open $(APP)
+
+test:
+	swift test
 
 clean:
 	rm -rf build
