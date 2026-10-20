@@ -15,6 +15,10 @@ A macOS app for applying real-time camera and microphone filters and making the 
 
 Requires macOS 13 or later and Xcode Command Line Tools (`xcode-select --install`).
 
+To run from Xcode, open `Masker.xcodeproj`, select the shared `Masker` scheme and
+the `My Mac` destination, then press Run (⌘R). The project uses the same Swift
+sources and camera permission description as the Makefile build.
+
 ```sh
 make run
 ```
