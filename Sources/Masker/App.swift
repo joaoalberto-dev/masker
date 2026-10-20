@@ -113,13 +113,26 @@ struct ContentView: View {
         switch model.selection {
         case .camera(let id):
             if let device = model.cameras.first(where: { $0.uniqueID == id }) {
-                CameraDetail(device: device, session: model.camera.session, message: model.cameraMessage)
+                CameraDetail(
+                    device: device,
+                    frame: model.cameraFrame,
+                    brightness: $model.cameraBrightness,
+                    contrast: $model.cameraContrast,
+                    whiteBalance: $model.cameraWhiteBalance,
+                    message: model.cameraMessage
+                )
             } else {
                 EmptyDetail(icon: "video", title: "Camera unavailable", message: "Refresh the device list or connect a camera.")
             }
         case .microphone(let id):
             if let device = model.microphones.first(where: { $0.uniqueID == id }) {
-                MicrophoneDetail(device: device, level: model.microphoneLevel, message: model.microphoneMessage)
+                MicrophoneDetail(
+                    device: device,
+                    level: model.microphoneLevel,
+                    gain: $model.microphoneGain,
+                    softness: $model.microphoneSoftness,
+                    message: model.microphoneMessage
+                )
             } else {
                 EmptyDetail(icon: "mic", title: "Microphone unavailable", message: "Refresh the device list or connect a microphone.")
             }
@@ -131,7 +144,10 @@ struct ContentView: View {
 
 private struct CameraDetail: View {
     let device: AVCaptureDevice
-    let session: AVCaptureSession
+    let frame: CGImage?
+    @Binding var brightness: Double
+    @Binding var contrast: Double
+    @Binding var whiteBalance: Double
     let message: String?
 
     var body: some View {
@@ -144,7 +160,7 @@ private struct CameraDetail: View {
             )
 
             ZStack {
-                CameraPreview(session: session)
+                CameraPreview(frame: frame)
                 if let message {
                     StatusMessage(icon: "video.slash", text: message)
                 }
@@ -153,6 +169,16 @@ private struct CameraDetail: View {
             .aspectRatio(16 / 9, contentMode: .fit)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+            SettingsPanel(onReset: {
+                brightness = PreviewControlDefaults.cameraBrightness
+                contrast = PreviewControlDefaults.cameraContrast
+                whiteBalance = PreviewControlDefaults.cameraWhiteBalance
+            }) {
+                AdjustmentSlider(label: "Brightness", value: $brightness, range: -1...1, valueText: brightness, format: "%+.2f")
+                AdjustmentSlider(label: "Contrast", value: $contrast, range: 0.5...2, valueText: contrast, format: "%.2f×")
+                AdjustmentSlider(label: "White balance", value: $whiteBalance, range: -1...1, valueText: whiteBalance, format: "%+.2f")
+            }
         }
         .padding(26)
     }
@@ -161,6 +187,8 @@ private struct CameraDetail: View {
 private struct MicrophoneDetail: View {
     let device: AVCaptureDevice
     let level: CGFloat
+    @Binding var gain: Double
+    @Binding var softness: Double
     let message: String?
 
     private let barPattern: [CGFloat] = [0.34, 0.5, 0.72, 0.45, 0.86, 0.58, 0.38, 0.67, 0.92, 0.54, 0.75, 0.42, 0.62, 0.88, 0.48, 0.7, 0.36, 0.58, 0.82, 0.45, 0.66, 0.9, 0.52, 0.74]
@@ -202,8 +230,68 @@ private struct MicrophoneDetail: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(red: 0.055, green: 0.07, blue: 0.075))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+            SettingsPanel(onReset: {
+                gain = PreviewControlDefaults.microphoneGain
+                softness = PreviewControlDefaults.microphoneSoftness
+            }) {
+                AdjustmentSlider(label: "Gain", value: $gain, range: 0...2, valueText: gain, format: "%.2f×")
+                AdjustmentSlider(label: "Soften voice", value: $softness, range: 0...0.95, valueText: softness, format: "%.0f%%", multiplier: 100)
+            }
         }
         .padding(26)
+    }
+}
+
+private struct SettingsPanel<Content: View>: View {
+    let onReset: () -> Void
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Preview controls")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button(action: onReset) {
+                    Image(systemName: "arrow.counterclockwise")
+                }
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
+                    .help("Reset")
+                    .accessibilityLabel("Reset")
+                    .accessibilityHint("Restores the preview controls to their defaults")
+            }
+            content
+        }
+        .padding(16)
+        .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
+
+private struct AdjustmentSlider: View {
+    let label: String
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+    let valueText: Double
+    let format: String
+    var multiplier: Double = 1
+
+    var body: some View {
+        VStack(spacing: 5) {
+            HStack {
+                Text(label)
+                    .font(.system(size: 13, weight: .medium))
+                Spacer()
+                Text(String(format: format, valueText * multiplier))
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("\(label) value")
+            }
+            Slider(value: $value, in: range)
+                .accessibilityLabel(label)
+        }
     }
 }
 
