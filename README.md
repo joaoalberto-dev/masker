@@ -11,6 +11,22 @@ A macOS app for applying real-time camera and microphone filters and making the 
 - Core Media I/O Camera Extension for the virtual camera.
 - Core Audio driver plug-in for the virtual microphone.
 
-## Status
+## Run locally
 
-Repository initialized. App implementation has not started.
+Requires macOS 13 or later and Xcode Command Line Tools (`xcode-select --install`).
+
+```sh
+make run
+```
+
+This builds and opens `build/Masker.app`: a single centered window with a fixed
+600 × 400 point content area and “Masker” centered horizontally and vertically.
+Closing the window quits the app.
+
+```sh
+make build  # Build the app without opening it
+make clean  # Remove build output
+```
+
+The initial interface uses SwiftUI hosted in an AppKit window. Capture, filters,
+and virtual devices are not implemented yet.
