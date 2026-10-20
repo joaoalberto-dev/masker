@@ -21,7 +21,6 @@ struct ContentView: View {
                 .accessibilityHidden(!isSidebarVisible)
             detail
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.trailing, 12)
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .frame(minWidth: 760, minHeight: 500)
