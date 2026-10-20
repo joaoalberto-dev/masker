@@ -137,7 +137,12 @@ private struct CameraDetail: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            DetailHeading(title: device.localizedName, subtitle: "Camera preview", icon: "video")
+            DetailHeading(
+                title: device.localizedName,
+                subtitle: "Camera preview",
+                icon: "video",
+                isActive: message == nil
+            )
 
             ZStack {
                 CameraPreview(session: session)
@@ -149,14 +154,6 @@ private struct CameraDetail: View {
             .aspectRatio(16 / 9, contentMode: .fit)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-            HStack(spacing: 8) {
-                Circle().fill(message == nil ? Color.green : Color.orange).frame(width: 7, height: 7)
-                Text(message == nil ? "Live preview" : "Camera paused")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
         }
         .padding(26)
     }
@@ -171,7 +168,12 @@ private struct MicrophoneDetail: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            DetailHeading(title: device.localizedName, subtitle: "Microphone input", icon: "mic")
+            DetailHeading(
+                title: device.localizedName,
+                subtitle: "Microphone input",
+                icon: "mic",
+                isActive: message == nil
+            )
 
             VStack(spacing: 25) {
                 if let message {
@@ -201,14 +203,6 @@ private struct MicrophoneDetail: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(red: 0.055, green: 0.07, blue: 0.075))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-            HStack(spacing: 8) {
-                Circle().fill(message == nil ? Color.green : Color.orange).frame(width: 7, height: 7)
-                Text(message == nil ? "Input level" : "Microphone paused")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
         }
         .padding(26)
     }
@@ -218,6 +212,7 @@ private struct DetailHeading: View {
     let title: String
     let subtitle: String
     let icon: String
+    let isActive: Bool
 
     var body: some View {
         HStack(spacing: 12) {
@@ -227,7 +222,12 @@ private struct DetailHeading: View {
                 .frame(width: 34, height: 34)
                 .background(Color.accentColor.opacity(0.11), in: RoundedRectangle(cornerRadius: 9))
             VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(.system(size: 17, weight: .semibold))
+                HStack(spacing: 8) {
+                    Text(title).font(.system(size: 17, weight: .semibold))
+                    Circle()
+                        .fill(isActive ? Color.green : Color.orange)
+                        .frame(width: 7, height: 7)
+                }
                 Text(subtitle).font(.system(size: 12)).foregroundStyle(.secondary)
             }
             Spacer()
