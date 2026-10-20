@@ -331,6 +331,18 @@ enum MaskerApp {
     @MainActor
     static func main() {
         let app = NSApplication.shared
+        let mainMenu = NSMenu()
+        let appMenuItem = NSMenuItem(title: "Masker", action: nil, keyEquivalent: "")
+        let appMenu = NSMenu(title: "Masker")
+        appMenu.addItem(
+            withTitle: "Quit Masker",
+            action: #selector(NSApplication.terminate(_:)),
+            keyEquivalent: "q"
+        )
+        appMenuItem.submenu = appMenu
+        mainMenu.addItem(appMenuItem)
+        app.mainMenu = mainMenu
+
         let delegate = AppDelegate()
         app.setActivationPolicy(.regular)
         app.delegate = delegate
