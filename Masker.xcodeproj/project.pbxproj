@@ -9,17 +9,42 @@
 /* Begin PBXBuildFile section */
 		A10000000000000000000001 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* App.swift */; };
 		A10000000000000000000002 /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* Camera.swift */; };
+		A10000000000000000000003 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* main.swift */; };
+		A10000000000000000000004 /* MaskerCameraProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* MaskerCameraProvider.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A90000000000000000000002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A50000000000000000000002 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A50000000000000000000005;
+			remoteInfo = CameraExtension;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		A20000000000000000000001 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* Camera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Camera.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A20000000000000000000004 /* Masker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Masker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000005 /* CameraExtension.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = CameraExtension.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000006 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		A20000000000000000000007 /* MaskerCameraProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskerCameraProvider.swift; sourceTree = "<group>"; };
+		A20000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A20000000000000000000009 /* CameraExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CameraExtension.entitlements; sourceTree = "<group>"; };
+		A20000000000000000000010 /* Masker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Masker.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A30000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A30000000000000000000002 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +58,7 @@
 			isa = PBXGroup;
 			children = (
 				A40000000000000000000002 /* Sources */,
+				A40000000000000000000006 /* CameraExtension */,
 				A40000000000000000000003 /* Resources */,
 				A40000000000000000000004 /* Products */,
 			);
@@ -50,6 +76,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000003 /* Info.plist */,
+				A20000000000000000000010 /* Masker.entitlements */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -58,6 +85,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000004 /* Masker.app */,
+				A20000000000000000000005 /* CameraExtension.systemextension */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -71,6 +99,17 @@
 			path = Masker;
 			sourceTree = "<group>";
 		};
+		A40000000000000000000006 /* CameraExtension */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000006 /* main.swift */,
+				A20000000000000000000007 /* MaskerCameraProvider.swift */,
+				A20000000000000000000008 /* Info.plist */,
+				A20000000000000000000009 /* CameraExtension.entitlements */,
+			);
+			path = CameraExtension;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -80,15 +119,33 @@
 			buildPhases = (
 				A60000000000000000000001 /* Sources */,
 				A30000000000000000000001 /* Frameworks */,
+				A60000000000000000000003 /* Embed Camera Extension */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A90000000000000000000001 /* PBXTargetDependency */,
 			);
 			name = Masker;
 			productName = Masker;
 			productReference = A20000000000000000000004 /* Masker.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A50000000000000000000005 /* CameraExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A70000000000000000000003 /* Build configuration list for PBXNativeTarget "CameraExtension" */;
+			buildPhases = (
+				A60000000000000000000002 /* Sources */,
+				A30000000000000000000002 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CameraExtension;
+			productName = CameraExtension;
+			productReference = A20000000000000000000005 /* CameraExtension.systemextension */;
+			productType = "com.apple.product-type.system-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -99,20 +156,48 @@
 				BuildIndependentTargetsInParallel = 1;
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
-					A50000000000000000000001 = {CreatedOnToolsVersion = 27.0; };
+					A50000000000000000000001 = {
+						CreatedOnToolsVersion = 27.0;
+					};
 				};
 			};
 			buildConfigurationList = A70000000000000000000001 /* Build configuration list for PBXProject "Masker" */;
 			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
 			mainGroup = A40000000000000000000001;
 			productRefGroup = A40000000000000000000004 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				A50000000000000000000001 /* Masker */,
+				A50000000000000000000005 /* CameraExtension */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		A60000000000000000000003 /* Embed Camera Extension */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/CameraExtension.systemextension",
+			);
+			name = "Embed Camera Extension";
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Library/SystemExtensions/CameraExtension.systemextension",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "mkdir -p \"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Library/SystemExtensions\"\ncp -R \"$BUILT_PRODUCTS_DIR/CameraExtension.systemextension\" \"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Library/SystemExtensions/\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A60000000000000000000001 /* Sources */ = {
@@ -124,12 +209,30 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A60000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000003 /* main.swift in Sources */,
+				A10000000000000000000004 /* MaskerCameraProvider.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A90000000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A50000000000000000000005 /* CameraExtension */;
+			targetProxy = A90000000000000000000002 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A80000000000000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
@@ -139,6 +242,7 @@
 		A80000000000000000000002 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
@@ -148,8 +252,9 @@
 		A80000000000000000000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "-";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_ENTITLEMENTS = Resources/Masker.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_APP_SANDBOX = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
@@ -157,6 +262,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.masker.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -168,8 +274,9 @@
 		A80000000000000000000004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "-";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_ENTITLEMENTS = Resources/Masker.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_APP_SANDBOX = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
@@ -177,9 +284,44 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.masker.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A80000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CameraExtension/CameraExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_APP_SANDBOX = YES;
+				INFOPLIST_FILE = CameraExtension/Info.plist;
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.masker.app.CameraExtension;
+				PRODUCT_NAME = CameraExtension;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A80000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CameraExtension/CameraExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_APP_SANDBOX = YES;
+				INFOPLIST_FILE = CameraExtension/Info.plist;
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.masker.app.CameraExtension;
+				PRODUCT_NAME = CameraExtension;
+				SDKROOT = macosx;
 				SUPPORTED_PLATFORMS = macosx;
 				SWIFT_VERSION = 5.0;
 			};
@@ -206,8 +348,16 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		A70000000000000000000003 /* Build configuration list for PBXNativeTarget "CameraExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A80000000000000000000005 /* Debug */,
+				A80000000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = A50000000000000000000002 /* Project object */;
 }

@@ -1,5 +1,6 @@
 import AppKit
 import AVFoundation
+@preconcurrency import SystemExtensions
 import SwiftUI
 
 struct ContentView: View {
@@ -113,7 +114,17 @@ struct ContentView: View {
         switch model.selection {
         case .camera(let id):
             if let device = model.cameras.first(where: { $0.uniqueID == id }) {
-                CameraDetail(device: device, session: model.camera.session, message: model.cameraMessage)
+                CameraDetail(
+                    device: device,
+                    camera: model.camera,
+                    session: model.camera.session,
+                    brightness: $model.cameraBrightness,
+                    message: model.cameraMessage,
+                    isPublished: model.isCameraPublished,
+                    publishMessage: model.publishMessage,
+                    publish: model.publishCamera,
+                    stopPublishing: model.stopPublishingCamera
+                )
             } else {
                 EmptyDetail(icon: "video", title: "Camera unavailable", message: "Refresh the device list or connect a camera.")
             }
@@ -131,23 +142,47 @@ struct ContentView: View {
 
 private struct CameraDetail: View {
     let device: AVCaptureDevice
+    let camera: CameraCapture
     let session: AVCaptureSession
+    @Binding var brightness: Double
     let message: String?
+    let isPublished: Bool
+    let publishMessage: String?
+    let publish: () -> Void
+    let stopPublishing: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            DetailHeading(
-                title: device.localizedName,
-                subtitle: "Camera preview",
-                icon: "video",
-                isActive: message == nil
-            )
+            HStack {
+                DetailHeading(
+                    title: device.localizedName,
+                    subtitle: "Camera preview",
+                    icon: "video",
+                    isActive: message == nil
+                )
+                Button(action: isPublished ? stopPublishing : publish) {
+                    Label(isPublished ? "Stop Publishing" : "Publish", systemImage: isPublished ? "stop.fill" : "dot.radiowaves.left.and.right")
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled((message != nil || publishMessage != nil) && !isPublished)
+                .help("Publish this filtered feed as a camera for other apps")
+            }
+            if let publishMessage {
+                Text(publishMessage)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
 
             ZStack {
                 CameraPreview(session: session)
+                    .brightness(brightness)
                 if let message {
                     StatusMessage(icon: "video.slash", text: message)
                 }
+            }
+            .overlay(alignment: .bottom) {
+                exposureControl
+                    .padding(14)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .aspectRatio(16 / 9, contentMode: .fit)
@@ -155,6 +190,30 @@ private struct CameraDetail: View {
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .padding(26)
+    }
+
+    private var exposureControl: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "sun.min")
+                .accessibilityHidden(true)
+            Slider(value: $brightness, in: 0...0.7)
+                .accessibilityLabel("Preview brightness")
+                .accessibilityValue("\(Int(brightness * 100)) percent")
+                .disabled(message != nil)
+                .onChange(of: brightness) { value in camera.setBrightness(value) }
+            Image(systemName: "sun.max.fill")
+                .accessibilityHidden(true)
+        }
+        .font(.system(size: 12, weight: .medium))
+        .foregroundStyle(.white)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(maxWidth: 340)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay {
+            Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.2), radius: 10, y: 3)
     }
 }
 
@@ -270,6 +329,55 @@ private struct EmptyDetail: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+final class CameraExtensionActivation: NSObject, OSSystemExtensionRequestDelegate {
+    static let shared = CameraExtensionActivation()
+
+    private var completion: ((String?) -> Void)?
+    private var approvalRequired: (() -> Void)?
+
+    func activate(
+        _ request: OSSystemExtensionRequest,
+        onApprovalRequired: @escaping () -> Void,
+        completion: @escaping (String?) -> Void
+    ) {
+        self.completion = completion
+        approvalRequired = onApprovalRequired
+        request.delegate = self
+        OSSystemExtensionManager.shared.submitRequest(request)
+    }
+
+    func deactivate(_ request: OSSystemExtensionRequest, completion: @escaping (String?) -> Void) {
+        self.completion = completion
+        approvalRequired = nil
+        request.delegate = self
+        OSSystemExtensionManager.shared.submitRequest(request)
+    }
+
+    func request(_ request: OSSystemExtensionRequest, didFinishWithResult result: OSSystemExtensionRequest.Result) {
+        completion?(nil)
+        completion = nil
+        approvalRequired = nil
+    }
+
+    func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
+        completion?(error.localizedDescription)
+        completion = nil
+        approvalRequired = nil
+    }
+
+    func requestNeedsUserApproval(_ request: OSSystemExtensionRequest) {
+        approvalRequired?()
+    }
+
+    func request(
+        _ request: OSSystemExtensionRequest,
+        actionForReplacingExtension existing: OSSystemExtensionProperties,
+        withExtension extensionProperties: OSSystemExtensionProperties
+    ) -> OSSystemExtensionRequest.ReplacementAction {
+        .replace
     }
 }
 
