@@ -6,14 +6,19 @@ struct ContentView: View {
     @ObservedObject var model: DeviceBrowserModel
 
     var body: some View {
+        let isSidebarVisible = model.columnVisibility != .detailOnly
+
         HStack(spacing: 0) {
-            if model.columnVisibility != .detailOnly {
-                sidebar
-                    .frame(width: 250)
-                    .padding(.leading, 12)
-                    .padding(.vertical, 12)
-                    .padding(.trailing, 14)
-            }
+            sidebar
+                .frame(width: 250)
+                .padding(.leading, 12)
+                .padding(.vertical, 12)
+                .padding(.trailing, 14)
+                .frame(width: isSidebarVisible ? 276 : 0, alignment: .leading)
+                .clipped()
+                .opacity(isSidebarVisible ? 1 : 0)
+                .allowsHitTesting(isSidebarVisible)
+                .accessibilityHidden(!isSidebarVisible)
             detail
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.trailing, 12)
