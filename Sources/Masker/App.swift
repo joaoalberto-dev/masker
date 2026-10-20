@@ -3,9 +3,27 @@ import AVFoundation
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var camera = CameraController()
+
     var body: some View {
-        Text("Masker")
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        VStack(spacing: 16) {
+            ZStack {
+                CameraPreview(session: camera.capture.session)
+                if let message = camera.message {
+                    Text(message)
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                }
+            }
+            .frame(width: 480, height: 270)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            Text("Masker")
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .task { await camera.start() }
+        .onDisappear { camera.capture.stop() }
     }
 }
 
@@ -27,9 +45,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.window = window
         NSApp.activate(ignoringOtherApps: true)
 
-        if AVCaptureDevice.authorizationStatus(for: .video) == .notDetermined {
-            AVCaptureDevice.requestAccess(for: .video) { _ in }
-        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

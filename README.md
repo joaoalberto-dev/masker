@@ -20,16 +20,17 @@ make run
 ```
 
 This builds and opens `build/Masker.app`: a single centered window with a fixed
-600 × 400 point content area and “Masker” centered horizontally and vertically.
+600 × 400 point content area with a centered live camera preview and “Masker” below it.
 Closing the window quits the app.
 
 On first launch, macOS asks for camera access. You can change this permission in
-System Settings → Privacy & Security → Camera. Camera capture is not started yet.
+System Settings → Privacy & Security → Camera. The app displays the default camera
+without recording video or capturing audio.
 
 ```sh
 make build  # Build the app without opening it
 make clean  # Remove build output
 ```
 
-The initial interface uses SwiftUI hosted in an AppKit window. Capture, filters,
-and virtual devices are not implemented yet.
+The interface uses SwiftUI hosted in an AppKit window, with AVFoundation for the
+camera preview. Filters and virtual devices are not implemented yet.
