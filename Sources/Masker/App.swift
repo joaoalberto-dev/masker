@@ -10,15 +10,17 @@ struct ContentView: View {
 
         HStack(spacing: 0) {
             sidebar
-                .frame(width: 250)
-                .padding(.leading, 12)
+                .frame(width: 252)
+                .padding(.horizontal, 10)
                 .padding(.vertical, 12)
-                .padding(.trailing, 14)
-                .frame(width: isSidebarVisible ? 276 : 0, alignment: .leading)
+                .frame(width: isSidebarVisible ? 272 : 0, alignment: .leading)
                 .clipped()
                 .opacity(isSidebarVisible ? 1 : 0)
                 .allowsHitTesting(isSidebarVisible)
                 .accessibilityHidden(!isSidebarVisible)
+            Rectangle()
+                .fill(Color.primary.opacity(isSidebarVisible ? 0.08 : 0))
+                .frame(width: isSidebarVisible ? 1 : 0)
             detail
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -38,18 +40,18 @@ struct ContentView: View {
         VStack(spacing: 0) {
             HStack {
                 Text("Devices")
-                    .font(.system(size: 19, weight: .semibold, design: .rounded))
+                    .font(.system(size: 18, weight: .semibold))
                 Spacer()
                 Button(action: model.refreshDevices) {
                     Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 13, weight: .medium))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.borderless)
+                .controlSize(.small)
                 .help("Refresh devices")
             }
-            .padding(.horizontal, 18)
-            .padding(.top, 20)
-            .padding(.bottom, 12)
+            .padding(.horizontal, 12)
+            .padding(.top, 14)
+            .padding(.bottom, 8)
 
             List(selection: $model.selection) {
                 Section("Camera") {
@@ -75,12 +77,7 @@ struct ContentView: View {
             .listStyle(.sidebar)
             .scrollContentBackground(.hidden)
         }
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
-        }
-        .shadow(color: .black.opacity(0.08), radius: 14, x: 0, y: 5)
+        .background(Color(nsColor: .underPageBackgroundColor))
     }
 
     private func deviceRow(_ device: AVCaptureDevice, icon: String, selection: DeviceSelection) -> some View {
@@ -156,19 +153,33 @@ private struct CameraDetail: View {
                 title: device.localizedName,
                 subtitle: "Camera preview",
                 icon: "video",
-                isActive: message == nil
+                status: message == nil ? (frame == nil ? "Starting" : "Live") : "Unavailable",
+                statusColor: message == nil ? (frame == nil ? .secondary : .green) : .orange
             )
 
             ZStack {
+                Color(nsColor: .underPageBackgroundColor)
                 CameraPreview(frame: frame)
                 if let message {
                     StatusMessage(icon: "video.slash", text: message)
+                } else if frame == nil {
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .controlSize(.regular)
+                            .tint(.white.opacity(0.8))
+                        Text("Waiting for video")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .aspectRatio(16 / 9, contentMode: .fit)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.09), lineWidth: 1)
+            }
 
             SettingsPanel(onReset: {
                 brightness = PreviewControlDefaults.cameraBrightness
@@ -199,7 +210,8 @@ private struct MicrophoneDetail: View {
                 title: device.localizedName,
                 subtitle: "Microphone input",
                 icon: "mic",
-                isActive: message == nil
+                status: message == nil ? "Listening" : "Unavailable",
+                statusColor: message == nil ? .green : .orange
             )
 
             VStack(spacing: 25) {
@@ -228,8 +240,12 @@ private struct MicrophoneDetail: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(red: 0.055, green: 0.07, blue: 0.075))
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(Color(nsColor: .underPageBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.09), lineWidth: 1)
+            }
 
             SettingsPanel(onReset: {
                 gain = PreviewControlDefaults.microphoneGain
@@ -265,8 +281,12 @@ private struct SettingsPanel<Content: View>: View {
             }
             content
         }
-        .padding(16)
-        .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .padding(18)
+        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 1)
+        }
     }
 }
 
@@ -299,7 +319,8 @@ private struct DetailHeading: View {
     let title: String
     let subtitle: String
     let icon: String
-    let isActive: Bool
+    let status: String
+    let statusColor: Color
 
     var body: some View {
         HStack(spacing: 12) {
@@ -309,15 +330,18 @@ private struct DetailHeading: View {
                 .frame(width: 34, height: 34)
                 .background(Color.accentColor.opacity(0.11), in: RoundedRectangle(cornerRadius: 9))
             VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 8) {
-                    Text(title).font(.system(size: 17, weight: .semibold))
-                    Circle()
-                        .fill(isActive ? Color.green : Color.orange)
-                        .frame(width: 7, height: 7)
-                }
+                Text(title).font(.system(size: 17, weight: .semibold))
                 Text(subtitle).font(.system(size: 12)).foregroundStyle(.secondary)
             }
             Spacer()
+            Text(status)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(statusColor)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(statusColor.opacity(0.11), in: Capsule())
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Status: \(status)")
         }
     }
 }
