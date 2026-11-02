@@ -4,6 +4,7 @@ import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var model: DeviceBrowserModel
+    @StateObject private var virtualDevices = VirtualDeviceInstaller()
 
     var body: some View {
         let isSidebarVisible = model.columnVisibility != .detailOnly
@@ -27,6 +28,9 @@ struct ContentView: View {
         .background(Color(nsColor: .windowBackgroundColor))
         .frame(minWidth: 760, minHeight: 500)
         .animation(.easeInOut(duration: 0.18), value: model.columnVisibility)
+        .alert(item: $virtualDevices.notice) { notice in
+            Alert(title: Text(notice.title), message: Text(notice.message), dismissButton: .default(Text("OK")))
+        }
         .onChange(of: model.selection) { model.select($0) }
         .task {
             if model.selection != nil { model.select(model.selection) }
@@ -116,7 +120,8 @@ struct ContentView: View {
                     brightness: $model.cameraBrightness,
                     contrast: $model.cameraContrast,
                     whiteBalance: $model.cameraWhiteBalance,
-                    message: model.cameraMessage
+                    message: model.cameraMessage,
+                    onSaveToSystem: virtualDevices.installCamera
                 )
             } else {
                 EmptyDetail(icon: "video", title: "Camera unavailable", message: "Refresh the device list or connect a camera.")
@@ -136,7 +141,8 @@ struct ContentView: View {
                     recordingDuration: model.recordingDuration,
                     onRecord: model.startRecording,
                     onStopRecording: model.stopRecording,
-                    onTogglePlayback: model.togglePlayback
+                    onTogglePlayback: model.togglePlayback,
+                    onSaveToSystem: virtualDevices.reportMicrophoneUnavailable
                 )
             } else {
                 EmptyDetail(icon: "mic", title: "Microphone unavailable", message: "Refresh the device list or connect a microphone.")
@@ -154,6 +160,7 @@ private struct CameraDetail: View {
     @Binding var contrast: Double
     @Binding var whiteBalance: Double
     let message: String?
+    let onSaveToSystem: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -162,7 +169,8 @@ private struct CameraDetail: View {
                 subtitle: "Camera preview",
                 icon: "video",
                 status: message == nil ? (frame == nil ? "Starting" : "Live") : "Unavailable",
-                statusColor: message == nil ? (frame == nil ? .secondary : .green) : .orange
+                statusColor: message == nil ? (frame == nil ? .secondary : .green) : .orange,
+                onSaveToSystem: onSaveToSystem
             )
 
             ZStack {
@@ -217,6 +225,7 @@ private struct MicrophoneDetail: View {
     let onRecord: () -> Void
     let onStopRecording: () -> Void
     let onTogglePlayback: () -> Void
+    let onSaveToSystem: () -> Void
 
     private let barPattern: [CGFloat] = [0.34, 0.5, 0.72, 0.45, 0.86, 0.58, 0.38, 0.67, 0.92, 0.54, 0.75, 0.42, 0.62, 0.88, 0.48, 0.7, 0.36, 0.58, 0.82, 0.45, 0.66, 0.9, 0.52, 0.74]
 
@@ -227,7 +236,8 @@ private struct MicrophoneDetail: View {
                 subtitle: "Record and playback",
                 icon: "mic",
                 status: message == nil ? (isRecording ? "Recording" : (isPlaying ? "Playing" : (recordingURL == nil ? "Ready" : "Clip ready"))) : "Unavailable",
-                statusColor: message == nil ? (isRecording ? .red : .green) : .orange
+                statusColor: message == nil ? (isRecording ? .red : .green) : .orange,
+                onSaveToSystem: onSaveToSystem
             )
 
             VStack(spacing: 25) {
@@ -366,6 +376,7 @@ private struct DetailHeading: View {
     let icon: String
     let status: String
     let statusColor: Color
+    let onSaveToSystem: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -379,6 +390,13 @@ private struct DetailHeading: View {
                 Text(subtitle).font(.system(size: 12)).foregroundStyle(.secondary)
             }
             Spacer()
+            Button(action: onSaveToSystem) {
+                Label("Save to System", systemImage: "externaldrive.badge.plus")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help("Save this filtered device to macOS")
+            .accessibilityHint("Adds this filtered device to macOS when virtual device support is available")
             Text(status)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(statusColor)

@@ -23,6 +23,14 @@ sources and camera/microphone permission descriptions as the Makefile build.
 make run
 ```
 
+`make build` creates an unsigned local build by default. To sign the app and
+camera extension for system activation, use an Apple Developer team that has
+the System Extension and App Groups capabilities enabled:
+
+```sh
+TEAM_ID=ABCDE12345 make build
+```
+
 This builds and opens `build/Masker.app`: a resizable device browser with Camera
 and Microphones groups in the sidebar. Selecting a camera shows its live video;
 selecting a microphone shows its input level and lets you record, filter, and play
@@ -34,7 +42,7 @@ Microphone. The app keeps microphone recordings in a temporary WAV file for play
 and does not transmit media.
 
 ```sh
-make build  # Build the app without opening it
+make build  # Build the app and embedded camera extension
 make test   # Run the XCTest suite
 make clean  # Remove build output
 ```
@@ -43,6 +51,7 @@ The XCTest suite is managed by Swift Package Manager and covers logic shared
 with the app. Run it with `swift test` or `make test`.
 
 The interface uses SwiftUI hosted in an AppKit window, with AVFoundation for
-device discovery and previews. Camera previews include brightness, contrast, and
-white-balance controls; microphone recordings include gain and voice-softening
-controls. Virtual devices are not implemented yet.
+device discovery and previews. The project includes a Core Media I/O camera
+extension that publishes the selected camera with the app’s video filters.
+Activating it requires a properly signed app in `/Applications` and approval in
+System Settings. The Core Audio virtual microphone driver is not implemented yet.

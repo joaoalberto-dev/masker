@@ -9,7 +9,7 @@ let package = Package(
             name: "MaskerCore",
             path: "Sources/Masker",
             exclude: ["App.swift"],
-            sources: ["Camera.swift"]
+            sources: ["Camera.swift", "VirtualDevices.swift"]
         ),
         .testTarget(
             name: "MaskerCoreTests",
