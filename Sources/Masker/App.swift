@@ -128,7 +128,15 @@ struct ContentView: View {
                     level: model.microphoneLevel,
                     gain: $model.microphoneGain,
                     softness: $model.microphoneSoftness,
-                    message: model.microphoneMessage
+                    message: model.microphoneMessage,
+                    recordingMessage: model.recordingMessage,
+                    isRecording: model.isRecording,
+                    recordingURL: model.recordingURL,
+                    isPlaying: model.isPlaying,
+                    recordingDuration: model.recordingDuration,
+                    onRecord: model.startRecording,
+                    onStopRecording: model.stopRecording,
+                    onTogglePlayback: model.togglePlayback
                 )
             } else {
                 EmptyDetail(icon: "mic", title: "Microphone unavailable", message: "Refresh the device list or connect a microphone.")
@@ -201,6 +209,14 @@ private struct MicrophoneDetail: View {
     @Binding var gain: Double
     @Binding var softness: Double
     let message: String?
+    let recordingMessage: String?
+    let isRecording: Bool
+    let recordingURL: URL?
+    let isPlaying: Bool
+    let recordingDuration: TimeInterval
+    let onRecord: () -> Void
+    let onStopRecording: () -> Void
+    let onTogglePlayback: () -> Void
 
     private let barPattern: [CGFloat] = [0.34, 0.5, 0.72, 0.45, 0.86, 0.58, 0.38, 0.67, 0.92, 0.54, 0.75, 0.42, 0.62, 0.88, 0.48, 0.7, 0.36, 0.58, 0.82, 0.45, 0.66, 0.9, 0.52, 0.74]
 
@@ -208,10 +224,10 @@ private struct MicrophoneDetail: View {
         VStack(alignment: .leading, spacing: 18) {
             DetailHeading(
                 title: device.localizedName,
-                subtitle: "Microphone input",
+                subtitle: "Record and playback",
                 icon: "mic",
-                status: message == nil ? "Listening" : "Unavailable",
-                statusColor: message == nil ? .green : .orange
+                status: message == nil ? (isRecording ? "Recording" : (isPlaying ? "Playing" : (recordingURL == nil ? "Ready" : "Clip ready"))) : "Unavailable",
+                statusColor: message == nil ? (isRecording ? .red : .green) : .orange
             )
 
             VStack(spacing: 25) {
@@ -230,12 +246,41 @@ private struct MicrophoneDetail: View {
                     .animation(.easeOut(duration: 0.12), value: level)
 
                     VStack(spacing: 6) {
-                        Text(level > 0.015 ? "Sound detected" : "Listening for sound")
+                        Text(isRecording ? "Recording filtered audio" : (level > 0.015 ? "Sound detected" : "Microphone ready"))
                             .font(.system(size: 15, weight: .medium))
                             .foregroundStyle(.white)
-                        Text("Speak or make a sound to check the input level.")
+                        Text(isRecording ? "Stop when you’re done. Your filters are applied as you record." : "Record a clip to hear the filtered result.")
                             .font(.system(size: 12))
                             .foregroundStyle(.white.opacity(0.58))
+                    }
+
+                    HStack(spacing: 10) {
+                        Button(action: isRecording ? onStopRecording : onRecord) {
+                            Label(isRecording ? "Stop Recording" : "Record", systemImage: isRecording ? "stop.fill" : "record.circle")
+                                .frame(minWidth: 130)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(isRecording ? .red : .accentColor)
+                        .controlSize(.large)
+
+                        if recordingURL != nil {
+                            Button(action: onTogglePlayback) {
+                                Label(isPlaying ? "Stop Playback" : "Play Recording", systemImage: isPlaying ? "stop.fill" : "play.fill")
+                                    .frame(minWidth: 130)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.large)
+                            Text(String(format: "%.1f s", recordingDuration))
+                                .font(.system(size: 12, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    if let recordingMessage {
+                        Text(recordingMessage)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.orange)
+                            .multilineTextAlignment(.center)
                     }
                 }
             }
@@ -266,7 +311,7 @@ private struct SettingsPanel<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Preview controls")
+                Text("Recording filters")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -277,7 +322,7 @@ private struct SettingsPanel<Content: View>: View {
                     .controlSize(.small)
                     .help("Reset")
                     .accessibilityLabel("Reset")
-                    .accessibilityHint("Restores the preview controls to their defaults")
+                    .accessibilityHint("Restores the recording filters to their defaults")
             }
             content
         }
