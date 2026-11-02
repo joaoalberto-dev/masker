@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		A10000000000000000000001 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* App.swift */; };
 		A10000000000000000000002 /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* Camera.swift */; };
+		A10000000000000000000003 /* VirtualDevices.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* VirtualDevices.swift */; };
+		A10000000000000000000004 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* main.swift */; };
+		A10000000000000000000005 /* MaskerProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* MaskerProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -16,6 +19,13 @@
 		A20000000000000000000002 /* Camera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Camera.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A20000000000000000000004 /* Masker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Masker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000005 /* VirtualDevices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualDevices.swift; sourceTree = "<group>"; };
+		A20000000000000000000006 /* MaskerCameraExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MaskerCameraExtension.entitlements; sourceTree = "<group>"; };
+		A20000000000000000000007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A20000000000000000000008 /* Masker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Masker.entitlements; sourceTree = "<group>"; };
+		A20000000000000000000009 /* MaskerProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskerProvider.swift; sourceTree = "<group>"; };
+		A2000000000000000000000A /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		A2000000000000000000000B /* MaskerCameraExtension.systemextension */ = {isa = PBXFileReference; explicitFileType = wrapper.system-extension; includeInIndex = 0; path = MaskerCameraExtension.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -35,6 +45,7 @@
 				A40000000000000000000002 /* Sources */,
 				A40000000000000000000003 /* Resources */,
 				A40000000000000000000004 /* Products */,
+				A40000000000000000000006 /* Extensions */,
 			);
 			sourceTree = "<group>";
 		};
@@ -50,6 +61,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000003 /* Info.plist */,
+				A20000000000000000000008 /* Masker.entitlements */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -58,6 +70,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000004 /* Masker.app */,
+				A2000000000000000000000B /* MaskerCameraExtension.systemextension */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -67,8 +80,28 @@
 			children = (
 				A20000000000000000000001 /* App.swift */,
 				A20000000000000000000002 /* Camera.swift */,
+				A20000000000000000000005 /* VirtualDevices.swift */,
 			);
 			path = Masker;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000006 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				A40000000000000000000007 /* MaskerCameraExtension */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000007 /* MaskerCameraExtension */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000009 /* MaskerProvider.swift */,
+				A2000000000000000000000A /* main.swift */,
+				A20000000000000000000007 /* Info.plist */,
+				A20000000000000000000006 /* MaskerCameraExtension.entitlements */,
+			);
+			path = MaskerCameraExtension;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -80,15 +113,44 @@
 			buildPhases = (
 				A60000000000000000000001 /* Sources */,
 				A30000000000000000000001 /* Frameworks */,
+				A60000000000000000000003 /* Embed Camera Extension */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A50000000000000000000004 /* PBXTargetDependency */,
 			);
 			name = Masker;
 			productName = Masker;
 			productReference = A20000000000000000000004 /* Masker.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A50000000000000000000003 /* MaskerCameraExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A70000000000000000000003 /* Build configuration list for PBXNativeTarget \"MaskerCameraExtension\" */;
+			buildPhases = (
+				A60000000000000000000002 /* Extension Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MaskerCameraExtension;
+			productName = MaskerCameraExtension;
+			productReference = A2000000000000000000000B /* MaskerCameraExtension.systemextension */;
+			productType = "com.apple.product-type.system-extension";
+		};
+		A50000000000000000000004 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A50000000000000000000003 /* MaskerCameraExtension */;
+			targetProxy = A90000000000000000000001 /* PBXContainerItemProxy */;
+		};
+		A90000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A50000000000000000000002 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A50000000000000000000003;
+			remoteInfo = MaskerCameraExtension;
 		};
 /* End PBXNativeTarget section */
 
@@ -110,6 +172,7 @@
 			projectRoot = "";
 			targets = (
 				A50000000000000000000001 /* Masker */,
+				A50000000000000000000003 /* MaskerCameraExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -121,8 +184,32 @@
 			files = (
 				A10000000000000000000001 /* App.swift in Sources */,
 				A10000000000000000000002 /* Camera.swift in Sources */,
+				A10000000000000000000003 /* VirtualDevices.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A60000000000000000000002 /* Extension Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000004 /* main.swift in Sources */,
+				A10000000000000000000005 /* MaskerProvider.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A60000000000000000000003 /* Embed Camera Extension */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			inputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/MaskerCameraExtension.systemextension",
+			);
+			name = "Embed Camera Extension";
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(FULL_PRODUCT_NAME)/Contents/Library/SystemExtensions/MaskerCameraExtension.systemextension",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nmkdir -p \"${TARGET_BUILD_DIR}/${FULL_PRODUCT_NAME}/Contents/Library/SystemExtensions\"\nditto \"${BUILT_PRODUCTS_DIR}/MaskerCameraExtension.systemextension\" \"${TARGET_BUILD_DIR}/${FULL_PRODUCT_NAME}/Contents/Library/SystemExtensions/MaskerCameraExtension.systemextension\"\n";
 		};
 /* End PBXSourcesBuildPhase section */
 
@@ -151,7 +238,8 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				ENABLE_APP_SANDBOX = NO;
+				ENABLE_APP_SANDBOX = YES;
+				CODE_SIGN_ENTITLEMENTS = Resources/Masker.entitlements;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -171,7 +259,8 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				ENABLE_APP_SANDBOX = NO;
+				ENABLE_APP_SANDBOX = YES;
+				CODE_SIGN_ENTITLEMENTS = Resources/Masker.entitlements;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -182,6 +271,42 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = macosx;
 				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A80000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/MaskerCameraExtension/MaskerCameraExtension.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				ENABLE_APP_SANDBOX = YES;
+				INFOPLIST_FILE = Extensions/MaskerCameraExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks");
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.masker.app.CameraExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 5.0;
+				WRAPPER_EXTENSION = systemextension;
+			};
+			name = Debug;
+		};
+		A80000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/MaskerCameraExtension/MaskerCameraExtension.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				ENABLE_APP_SANDBOX = YES;
+				INFOPLIST_FILE = Extensions/MaskerCameraExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks");
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.masker.app.CameraExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 5.0;
+				WRAPPER_EXTENSION = systemextension;
 			};
 			name = Release;
 		};
@@ -202,6 +327,15 @@
 			buildConfigurations = (
 				A80000000000000000000003 /* Debug */,
 				A80000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A70000000000000000000003 /* Build configuration list for PBXNativeTarget "MaskerCameraExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A80000000000000000000005 /* Debug */,
+				A80000000000000000000006 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -56,9 +56,9 @@ final class DeviceBrowserModel: NSObject, ObservableObject, AVAudioPlayerDelegat
     @Published private(set) var recordingDuration: TimeInterval = 0
     @Published private(set) var recordingMessage: String?
     @Published private(set) var cameraFrame: CGImage?
-    @Published var cameraBrightness: Double = PreviewControlDefaults.cameraBrightness { didSet { camera.configure(brightness: Float(cameraBrightness), contrast: Float(cameraContrast), whiteBalance: Float(cameraWhiteBalance)) } }
-    @Published var cameraContrast: Double = PreviewControlDefaults.cameraContrast { didSet { camera.configure(brightness: Float(cameraBrightness), contrast: Float(cameraContrast), whiteBalance: Float(cameraWhiteBalance)) } }
-    @Published var cameraWhiteBalance: Double = PreviewControlDefaults.cameraWhiteBalance { didSet { camera.configure(brightness: Float(cameraBrightness), contrast: Float(cameraContrast), whiteBalance: Float(cameraWhiteBalance)) } }
+    @Published var cameraBrightness: Double = PreviewControlDefaults.cameraBrightness { didSet { camera.configure(brightness: Float(cameraBrightness), contrast: Float(cameraContrast), whiteBalance: Float(cameraWhiteBalance)); VirtualDevicePreferences.set(cameraBrightness, forKey: VirtualDevicePreferences.cameraBrightness) } }
+    @Published var cameraContrast: Double = PreviewControlDefaults.cameraContrast { didSet { camera.configure(brightness: Float(cameraBrightness), contrast: Float(cameraContrast), whiteBalance: Float(cameraWhiteBalance)); VirtualDevicePreferences.set(cameraContrast, forKey: VirtualDevicePreferences.cameraContrast) } }
+    @Published var cameraWhiteBalance: Double = PreviewControlDefaults.cameraWhiteBalance { didSet { camera.configure(brightness: Float(cameraBrightness), contrast: Float(cameraContrast), whiteBalance: Float(cameraWhiteBalance)); VirtualDevicePreferences.set(cameraWhiteBalance, forKey: VirtualDevicePreferences.cameraWhiteBalance) } }
     @Published var microphoneGain: Double = PreviewControlDefaults.microphoneGain { didSet { microphone.configure(gain: Float(microphoneGain), softness: Float(microphoneSoftness)) } }
     @Published var microphoneSoftness: Double = PreviewControlDefaults.microphoneSoftness { didSet { microphone.configure(gain: Float(microphoneGain), softness: Float(microphoneSoftness)) } }
 
@@ -82,7 +82,7 @@ final class DeviceBrowserModel: NSObject, ObservableObject, AVAudioPlayerDelegat
             deviceTypes: [.builtInWideAngleCamera, .externalUnknown],
             mediaType: .video,
             position: .unspecified
-        ).devices
+        ).devices.filter { $0.localizedName != VirtualDevicePreferences.cameraName }
         microphones = AVCaptureDevice.DiscoverySession(
             deviceTypes: [.builtInMicrophone, .externalUnknown],
             mediaType: .audio,
@@ -103,6 +103,9 @@ final class DeviceBrowserModel: NSObject, ObservableObject, AVAudioPlayerDelegat
             } else if let microphone = microphones.first {
                 selection = .microphone(microphone.uniqueID)
             }
+        }
+        if case .camera(let id) = selection {
+            VirtualDevicePreferences.set(id, forKey: VirtualDevicePreferences.cameraDeviceID)
         }
     }
 
@@ -177,6 +180,9 @@ final class DeviceBrowserModel: NSObject, ObservableObject, AVAudioPlayerDelegat
 
     func select(_ selection: DeviceSelection?) {
         self.selection = selection
+        if case .camera(let id) = selection {
+            VirtualDevicePreferences.set(id, forKey: VirtualDevicePreferences.cameraDeviceID)
+        }
         stopPlayback()
         if isRecording { stopRecording() }
         camera.stop()

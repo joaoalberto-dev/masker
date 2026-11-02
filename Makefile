@@ -1,21 +1,19 @@
-APP := build/Masker.app
-BINARY := $(APP)/Contents/MacOS/Masker
-SOURCES := $(wildcard Sources/Masker/*.swift)
-ARCH := $(shell uname -m)
+APP := build/DerivedData/Build/Products/Debug/Masker.app
+DERIVED_DATA := build/DerivedData
+TEAM_ID ?=
+
+ifneq ($(strip $(TEAM_ID)),)
+SIGNING_ARGS := CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY=Apple\ Development DEVELOPMENT_TEAM=$(TEAM_ID) CODE_SIGNING_ALLOWED=YES
+else
+SIGNING_ARGS := CODE_SIGNING_ALLOWED=NO
+endif
 
 .PHONY: all build run test clean
 
 all: build
 
-build: $(BINARY) $(APP)/Contents/Info.plist
-
-$(BINARY): $(SOURCES)
-	mkdir -p $(APP)/Contents/MacOS build/module-cache
-	xcrun swiftc -parse-as-library -target $(ARCH)-apple-macosx13.0 -module-cache-path build/module-cache $(SOURCES) -o $@
-
-$(APP)/Contents/Info.plist: Resources/Info.plist
-	mkdir -p $(APP)/Contents
-	cp $< $@
+build:
+	xcodebuild -project Masker.xcodeproj -scheme Masker -configuration Debug -derivedDataPath $(DERIVED_DATA) $(SIGNING_ARGS)
 
 run: build
 	open $(APP)
