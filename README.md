@@ -25,11 +25,13 @@ make run
 
 This builds and opens `build/Masker.app`: a resizable device browser with Camera
 and Microphones groups in the sidebar. Selecting a camera shows its live video;
-selecting a microphone shows its live input level. Closing the window quits the app.
+selecting a microphone shows its input level and lets you record, filter, and play
+back a temporary audio clip. Closing the window quits the app.
 
 On first use of each device type, macOS asks for camera or microphone access. You
 can change these permissions in System Settings → Privacy & Security → Camera or
-Microphone. The app previews the selected device and does not save or transmit media.
+Microphone. The app keeps microphone recordings in a temporary WAV file for playback
+and does not transmit media.
 
 ```sh
 make build  # Build the app without opening it
@@ -42,5 +44,5 @@ with the app. Run it with `swift test` or `make test`.
 
 The interface uses SwiftUI hosted in an AppKit window, with AVFoundation for
 device discovery and previews. Camera previews include brightness, contrast, and
-white-balance controls; microphone previews include gain and voice-softening
+white-balance controls; microphone recordings include gain and voice-softening
 controls. Virtual devices are not implemented yet.

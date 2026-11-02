@@ -42,7 +42,7 @@ enum PreviewControlDefaults {
 }
 
 @MainActor
-final class DeviceBrowserModel: ObservableObject {
+final class DeviceBrowserModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published private(set) var cameras: [AVCaptureDevice] = []
     @Published private(set) var microphones: [AVCaptureDevice] = []
     @Published var selection: DeviceSelection?
@@ -50,6 +50,11 @@ final class DeviceBrowserModel: ObservableObject {
     @Published private(set) var cameraMessage: String?
     @Published private(set) var microphoneMessage: String?
     @Published private(set) var microphoneLevel: CGFloat = 0
+    @Published private(set) var isRecording = false
+    @Published private(set) var recordingURL: URL?
+    @Published private(set) var isPlaying = false
+    @Published private(set) var recordingDuration: TimeInterval = 0
+    @Published private(set) var recordingMessage: String?
     @Published private(set) var cameraFrame: CGImage?
     @Published var cameraBrightness: Double = PreviewControlDefaults.cameraBrightness { didSet { camera.configure(brightness: Float(cameraBrightness), contrast: Float(cameraContrast), whiteBalance: Float(cameraWhiteBalance)) } }
     @Published var cameraContrast: Double = PreviewControlDefaults.cameraContrast { didSet { camera.configure(brightness: Float(cameraBrightness), contrast: Float(cameraContrast), whiteBalance: Float(cameraWhiteBalance)) } }
@@ -59,8 +64,10 @@ final class DeviceBrowserModel: ObservableObject {
 
     let camera = CameraCapture()
     private let microphone = MicrophoneCapture()
+    private var audioPlayer: AVAudioPlayer?
 
-    init() {
+    override init() {
+        super.init()
         refreshDevices()
         microphone.onLevel = { [weak self] level in
             Task { @MainActor in self?.microphoneLevel = CGFloat(level) }
@@ -100,12 +107,78 @@ final class DeviceBrowserModel: ObservableObject {
     }
 
     func stop() {
+        stopPlayback()
+        if isRecording { stopRecording() }
         camera.stop()
         microphone.stop()
     }
 
+    func startRecording() {
+        guard !isRecording else { return }
+        stopPlayback()
+        recordingMessage = nil
+        recordingURL = nil
+        recordingDuration = 0
+        microphone.startRecording(gain: Float(microphoneGain), softness: Float(microphoneSoftness)) { [weak self] result in
+            Task { @MainActor in
+                guard let self else { return }
+                switch result {
+                case .success:
+                    self.isRecording = true
+                case .failure(let error):
+                    self.recordingMessage = "Unable to record audio: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    func stopRecording() {
+        guard isRecording else { return }
+        isRecording = false
+        microphone.stopRecording { [weak self] result in
+            Task { @MainActor in
+                guard let self else { return }
+                switch result {
+                case .success(let url):
+                    do {
+                        let player = try AVAudioPlayer(contentsOf: url)
+                        player.delegate = self
+                        self.audioPlayer = player
+                        self.recordingURL = url
+                        self.recordingDuration = player.duration
+                    } catch {
+                        self.recordingMessage = "Unable to open the recorded audio: \(error.localizedDescription)"
+                    }
+                case .failure(let error):
+                    self.recordingMessage = "Unable to finish the recording: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    func togglePlayback() {
+        guard let audioPlayer else { return }
+        if audioPlayer.isPlaying {
+            stopPlayback()
+        } else if audioPlayer.play() {
+            isPlaying = true
+        }
+    }
+
+    func stopPlayback() {
+        audioPlayer?.stop()
+        audioPlayer?.currentTime = 0
+        isPlaying = false
+    }
+
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        isPlaying = false
+    }
+
     func select(_ selection: DeviceSelection?) {
         self.selection = selection
+        stopPlayback()
+        if isRecording { stopRecording() }
         camera.stop()
         microphone.stop()
         cameraMessage = nil
@@ -231,12 +304,22 @@ final class MicrophoneCapture: NSObject, AVCaptureAudioDataOutputSampleBufferDel
     private var gain: Float = 1
     private var softness: Float = 0
     private var previousLevel: Float = 0
+    private var recordingHandle: FileHandle?
+    private var recordingURL: URL?
+    private var recordedByteCount: UInt32 = 0
+    private var recordingGain: Float = 1
+    private var recordingSoftness: Float = 0
+    private var previousSamples = [Float]()
+    private let sampleRate: UInt32 = 44_100
+    private let channelCount: UInt16 = 1
     var onLevel: (@Sendable (Float) -> Void)?
 
     func configure(gain: Float, softness: Float) {
-        queue.async { [self] in
+        sampleQueue.async { [self] in
             self.gain = min(max(gain, 0), 2)
             self.softness = min(max(softness, 0), 0.95)
+            self.recordingGain = self.gain
+            self.recordingSoftness = self.softness
         }
     }
 
@@ -267,6 +350,15 @@ final class MicrophoneCapture: NSObject, AVCaptureAudioDataOutputSampleBufferDel
                         return
                     }
                     session.addInput(input)
+                    audioOutput.audioSettings = [
+                        AVFormatIDKey: kAudioFormatLinearPCM,
+                        AVSampleRateKey: sampleRate,
+                        AVNumberOfChannelsKey: channelCount,
+                        AVLinearPCMBitDepthKey: 16,
+                        AVLinearPCMIsBigEndianKey: false,
+                        AVLinearPCMIsFloatKey: false,
+                        AVLinearPCMIsNonInterleaved: false
+                    ]
                     guard session.canAddOutput(audioOutput) else {
                         session.commitConfiguration()
                         continuation.resume(returning: "Unable to read audio from this microphone.")
@@ -288,11 +380,88 @@ final class MicrophoneCapture: NSObject, AVCaptureAudioDataOutputSampleBufferDel
 
     func stop() {
         queue.async { [self] in
+            sampleQueue.sync { finishRecording(completion: nil) }
             if session.isRunning { session.stopRunning() }
             activeDeviceID = nil
-            previousLevel = 0
-            onLevel?(0)
+            sampleQueue.async { [self] in
+                previousLevel = 0
+                onLevel?(0)
+            }
         }
+    }
+
+    func startRecording(gain: Float, softness: Float, completion: @escaping @Sendable (Result<Void, Error>) -> Void) {
+        sampleQueue.async { [self] in
+            do {
+                guard recordingHandle == nil else { throw RecordingError.alreadyRecording }
+                let url = FileManager.default.temporaryDirectory.appendingPathComponent("Masker-\(UUID().uuidString).wav")
+                FileManager.default.createFile(atPath: url.path, contents: nil)
+                let handle = try FileHandle(forWritingTo: url)
+                handle.write(Data(Self.wavHeader(sampleRate: sampleRate, channels: channelCount, byteCount: 0)))
+                self.recordingHandle = handle
+                self.recordingURL = url
+                self.recordedByteCount = 0
+                self.recordingGain = min(max(gain, 0), 2)
+                self.recordingSoftness = min(max(softness, 0), 0.95)
+                self.previousSamples = Array(repeating: 0, count: Int(channelCount))
+                completion(.success(()))
+            } catch {
+                completion(.failure(error))
+            }
+        }
+    }
+
+    func stopRecording(completion: @escaping @Sendable (Result<URL, Error>) -> Void) {
+        sampleQueue.async { [self] in
+            finishRecording { result in completion(result) }
+        }
+    }
+
+    private func finishRecording(completion: ((Result<URL, Error>) -> Void)?) {
+        guard let handle = recordingHandle, let url = recordingURL else {
+            completion?(.failure(RecordingError.noRecording))
+            return
+        }
+        do {
+            try handle.seek(toOffset: 0)
+            try handle.write(contentsOf: Data(Self.wavHeader(sampleRate: sampleRate, channels: channelCount, byteCount: recordedByteCount)))
+            try handle.close()
+            recordingHandle = nil
+            recordingURL = nil
+            completion?(.success(url))
+        } catch {
+            recordingHandle = nil
+            recordingURL = nil
+            completion?(.failure(error))
+        }
+    }
+
+    private enum RecordingError: LocalizedError {
+        case alreadyRecording
+        case noRecording
+        case unsupportedFormat
+
+        var errorDescription: String? {
+            switch self {
+            case .alreadyRecording: "A recording is already in progress."
+            case .noRecording: "There is no recording to finish."
+            case .unsupportedFormat: "The microphone provided an unsupported audio format."
+            }
+        }
+    }
+
+    private static func wavHeader(sampleRate: UInt32, channels: UInt16, byteCount: UInt32) -> [UInt8] {
+        let data = byteCount
+        let riffSize = data &+ 36
+        let byteRate = sampleRate &* UInt32(channels) &* 2
+        let blockAlign = channels &* 2
+        return Array("RIFF".utf8) + littleEndian(riffSize) + Array("WAVEfmt ".utf8) + littleEndian(UInt32(16)) +
+            littleEndian(UInt16(1)) + littleEndian(channels) + littleEndian(sampleRate) + littleEndian(byteRate) +
+            littleEndian(blockAlign) + littleEndian(UInt16(16)) + Array("data".utf8) + littleEndian(data)
+    }
+
+    private static func littleEndian<T: FixedWidthInteger>(_ value: T) -> [UInt8] {
+        withUnsafeBytes(of: value.littleEndian, Array.init)
     }
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
@@ -318,7 +487,29 @@ final class MicrophoneCapture: NSObject, AVCaptureAudioDataOutputSampleBufferDel
             peak = MicrophoneLevel.peak(in: UnsafeBufferPointer(start: samples, count: sampleCount))
         } else if stream.mFormatFlags & kAudioFormatFlagIsSignedInteger != 0 && bytesPerSample == MemoryLayout<Int16>.size {
             let samples = UnsafeRawPointer(dataPointer).assumingMemoryBound(to: Int16.self)
-            peak = MicrophoneLevel.peak(in: UnsafeBufferPointer(start: samples, count: sampleCount))
+            let inputSamples = UnsafeBufferPointer(start: samples, count: sampleCount)
+            peak = MicrophoneLevel.peak(in: inputSamples)
+            if let recordingHandle {
+                guard stream.mChannelsPerFrame == channelCount, stream.mSampleRate == Double(sampleRate) else { return }
+                var filtered = [Int16]()
+                filtered.reserveCapacity(sampleCount)
+                let amount = recordingSoftness
+                for index in 0..<sampleCount {
+                    let channel = index % Int(channelCount)
+                    let input = Float(inputSamples[index]) / 32_768
+                    let smoothed = input * (1 - amount) + previousSamples[channel] * amount
+                    previousSamples[channel] = smoothed
+                    let output = min(max(smoothed * recordingGain, -1), 1)
+                    filtered.append(Int16((output * 32_767).rounded()))
+                }
+                let bytes = filtered.withUnsafeBytes { Data($0) }
+                do {
+                    try recordingHandle.write(contentsOf: bytes)
+                    recordedByteCount &+= UInt32(bytes.count)
+                } catch {
+                    finishRecording(completion: nil)
+                }
+            }
         } else {
             return
         }
